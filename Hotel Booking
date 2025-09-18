@@ -1,0 +1,57 @@
+import java.util.Scanner;
+
+public class HotelBooking {
+    public static void main(String[] args) {
+        int floors = 5;        // Number of floors
+        int roomsPerFloor = 5; // Rooms on each floor
+
+        boolean[][] rooms = new boolean[floors][roomsPerFloor]; // false = available, true = booked
+        Scanner scanner = new Scanner(System.in);
+        int choice;
+
+        System.out.println("Welcome to the Hotel Booking System");
+
+        do {
+            System.out.println("\nCurrent Booking Status:");
+            displayRooms(rooms);
+
+            System.out.print("\nEnter floor number (0 to " + (floors - 1) + "): ");
+            int floor = scanner.nextInt();
+
+            System.out.print("Enter room number (0 to " + (roomsPerFloor - 1) + "): ");
+            int room = scanner.nextInt();
+
+            if (floor < 0 || floor >= floors || room < 0 || room >= roomsPerFloor) {
+                System.out.println("Invalid floor or room number. Please try again.");
+            } else if (rooms[floor][room]) {
+                System.out.println("Room already booked. Please choose a different room.");
+            } else {
+                rooms[floor][room] = true;
+                System.out.println("Room " + room + " on floor " + floor + " successfully booked.");
+            }
+
+            System.out.print("\nDo you want to book another room? (1 = Yes, 0 = No): ");
+            choice = scanner.nextInt();
+
+        } while (choice == 1);
+
+        System.out.println("\nFinal Booking Status:");
+        displayRooms(rooms);
+
+        System.out.println("Thank you for using the Hotel Booking System.");
+    }
+
+    public static void displayRooms(boolean[][] rooms) {
+        for (int i = 0; i < rooms.length; i++) {
+            System.out.print("Floor " + i + ": ");
+            for (int j = 0; j < rooms[i].length; j++) {
+                if (rooms[i][j]) {
+                    System.out.print("[X] "); // Booked
+                } else {
+                    System.out.print("[ ] "); // Available
+                }
+            }
+            System.out.println();
+        }
+    }
+}

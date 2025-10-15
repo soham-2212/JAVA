@@ -1,0 +1,160 @@
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class CohenSutherlandClipping extends JPanel {
+    // Clipping window boundaries
+    final int xMin = 100, yMin = 100, xMax = 300, yMax = 300;
+
+    // Region codes
+    final int INSIDE = 0; // 0000
+    final int LEFT = 1;   // 0001
+    final int RIGHT = 2;  // 0010
+    final int BOTTOM = 4; // 0100
+    final int TOP = 8;    // 1000
+
+    // Store user input lines
+    private final ArrayList<Line> lines = new ArrayList<>();
+
+    // Line class to hold endpoints
+    private static class Line {
+        int x1, y1, x2, y2;
+        Line(int x1, int y1, int x2, int y2) {
+            this.x1 = x1; this.y1 = y1; this.x2 = x2; this.y2 = y2;
+        }
+    }
+
+    // Compute region code for a point (x, y)
+    private int computeCode(int x, int y) {
+        int code = INSIDE;
+
+        if (x < xMin) code |= LEFT;
+        else if (x > xMax) code |= RIGHT;
+        if (y < yMin) code |= BOTTOM;
+        else if (y > yMax) code |= TOP;
+
+        return code;
+    }
+
+    // Cohen-Sutherland line clipping algorithm
+    private Line cohenSutherlandClip(Line line) {
+        int x1 = line.x1, y1 = line.y1, x2 = line.x2, y2 = line.y2;
+        int code1 = computeCode(x1, y1);
+        int code2 = computeCode(x2, y2);
+
+        boolean accept = false;
+
+        while (true) {
+            if ((code1 | code2) == 0) {
+                accept = true;
+                break;
+            } else if ((code1 & code2) != 0) {
+                break;
+            } else {
+                int codeOut;
+                int x = 0, y = 0;
+
+                codeOut = (code1 != 0) ? code1 : code2;
+
+                if ((codeOut & TOP) != 0) {
+                    x = x1 + (x2 - x1) * (yMax - y1) / (y2 - y1);
+                    y = yMax;
+                } else if ((codeOut & BOTTOM) != 0) {
+                    x = x1 + (x2 - x1) * (yMin - y1) / (y2 - y1);
+                    y = yMin;
+                } else if ((codeOut & RIGHT) != 0) {
+                    y = y1 + (y2 - y1) * (xMax - x1) / (x2 - x1);
+                    x = xMax;
+                } else if ((codeOut & LEFT) != 0) {
+                    y = y1 + (y2 - y1) * (xMin - x1) / (x2 - x1);
+                    x = xMin;
+                }
+
+                if (codeOut == code1) {
+                    x1 = x;
+                    y1 = y;
+                    code1 = computeCode(x1, y1);
+                } else {
+                    x2 = x;
+                    y2 = y;
+                    code2 = computeCode(x2, y2);
+                }
+            }
+        }
+
+        if (accept) {
+            return new Line(x1, y1, x2, y2);
+        } else {
+            return null;
+        }
+    }
+
+    // Determine acceptance status of a line
+    private String lineAcceptanceStatus(Line line) {
+        int code1 = computeCode(line.x1, line.y1);
+        int code2 = computeCode(line.x2, line.y2);
+
+        if ((code1 | code2) == 0) {
+            return "Totally Accepted";
+        } else if ((code1 & code2) != 0) {
+            return "Totally Rejected";
+        } else {
+            return "Partially Accepted";
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        // Draw clipping window
+        g.setColor(Color.BLACK);
+        g.drawRect(xMin, yMin, xMax - xMin, yMax - yMin);
+
+        // Draw all user input lines and their clipped parts
+        for (Line line : lines) {
+            // Draw original line in red
+            g.setColor(Color.RED);
+            g.drawLine(line.x1, line.y1, line.x2, line.y2);
+
+            // Draw clipped line in green if exists
+            Line clipped = cohenSutherlandClip(line);
+            if (clipped != null) {
+                g.setColor(Color.GREEN);
+                g.drawLine(clipped.x1, clipped.y1, clipped.x2, clipped.y2);
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        CohenSutherlandClipping panel = new CohenSutherlandClipping();
+
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Enter number of lines: ");
+        int n = sc.nextInt();
+
+        for (int i = 0; i < n; i++) {
+            System.out.println("Enter coordinates for line " + (i + 1) + " (x1 y1 x2 y2): ");
+            int x1 = sc.nextInt();
+            int y1 = sc.nextInt();
+            int x2 = sc.nextInt();
+            int y2 = sc.nextInt();
+
+            Line line = new Line(x1, y1, x2, y2);
+            panel.lines.add(line);
+
+            String status = panel.lineAcceptanceStatus(line);
+            System.out.println("Line " + (i + 1) + " is " + status);
+        }
+
+        // Setup GUI
+        JFrame frame = new JFrame("Cohen-Sutherland Line Clipping Algorithm");
+        frame.add(panel);
+        frame.setSize(500, 500);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+
+        sc.close();
+    }
+}
